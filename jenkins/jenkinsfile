@@ -1,0 +1,56 @@
+pipeline {
+  agent any
+
+  environment {
+    REGISTRY = "localhost:5000"
+    IMAGE = "node-health-service"
+  }
+
+  stages {
+    stage('Build & Test') {
+      steps {
+        sh 'npm ci'
+        sh 'npm test'
+      }
+    }
+
+    stage('Static Analysis') {
+      steps {
+        sh 'npm run lint || true'
+      }
+    }
+
+    stage('Security Scan') {
+      when {
+        anyOf {
+          branch 'test'
+          branch 'prod'
+        }
+      }
+      steps {
+        sh 'trivy fs .'
+      }
+    }
+
+    stage('Build & Push Image') {
+      when {
+        anyOf {
+          branch 'test'
+          branch 'prod'
+        }
+      }
+      steps {
+        script {
+          def tag = (env.BRANCH_NAME == 'prod') ?
+            "release-${env.BUILD_NUMBER}" :
+            "test-${env.BUILD_NUMBER}"
+
+          sh """
+            docker build -t $REGISTRY/$IMAGE:$tag app
+            docker push $REGISTRY/$IMAGE:$tag
+          """
+        }
+      }
+    }
+  }
+}

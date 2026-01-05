@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - ./jenkins/plugins.txt:/usr/share/jenkins/ref/plugins.txt
+      - ./jenkins/casc_configs:/var/jenkins_home/casc_configs
+    environment:
+      - JENKINS_CASC_JENKINS_CONFIG=/var/jenkins_home/casc_configs/jenkins.yaml
