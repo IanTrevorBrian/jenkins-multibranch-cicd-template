@@ -2,23 +2,33 @@ version: "3.9"
 
 services:
   jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins
+    build: ./jenkins
     ports:
       - "8080:8080"
-      - "50000:50000"
     volumes:
-      - ./jenkins/plugins.txt:/usr/share/jenkins/ref/plugins.txt
-      - ./jenkins/casc_configs:/var/jenkins_home/casc_configs
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - JENKINS_CASC_JENKINS_CONFIG=/var/jenkins_home/casc_configs/jenkins.yaml
-registry:
-  image: registry:2
-  ports:
-    - "5000:5000"
-  environment:
-    REGISTRY_AUTH: htpasswd
-    REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
-    REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
-  volumes:
-    - ./registry/auth:/auth
+      - CASC_JENKINS_CONFIG=/var/jenkins_home/casc.yaml
+
+  registry:
+    image: registry:2
+    ports:
+      - "5000:5000"
+    environment:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+    volumes:
+      - ./registry/auth:/auth
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+volumes:
+  jenkins_home:
+
