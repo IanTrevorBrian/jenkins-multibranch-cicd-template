@@ -15,34 +15,6 @@ This repository contains:
 
 Everything is started using Docker Compose.
 
-## Repository Structure
-
-.
-├── app/                    # Node.js microservice
-│   ├── src/
-│   │   └── index.js
-│   ├── test/
-│   │   └── health.test.js
-│   ├── package.json
-│   └── Dockerfile
-│
-├── Jenkinsfile              # Multibranch pipeline definition
-│
-├── jenkins/                 # Jenkins platform configuration
-│   ├── Dockerfile
-│   ├── plugins.txt
-│   └── casc.yaml
-│
-├── registry/                # Docker registry authentication
-│   └── auth/
-│       └── htpasswd
-│
-├── observability/           # Monitoring configuration
-│   └── prometheus.yml
-│
-├── docker-compose.yml
-└── README.md
-
 ## Microservice
 
 The example application is a simple Node.js service that exposes a health endpoint.
