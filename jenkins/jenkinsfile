@@ -7,16 +7,59 @@ pipeline {
   }
 
   stages {
-    stage('Build & Test') {
+
+    stage('Checkout') {
       steps {
-        sh 'npm ci'
-        sh 'npm test'
+        checkout scm
       }
     }
 
-    stage('Static Analysis') {
+    stage('Install Dependencies') {
       steps {
-        sh 'npm run lint || true'
+        dir('app') {
+          sh 'npm ci'
+        }
+      }
+    }
+
+    stage('Build App') {
+      steps {
+        dir('app') {
+          sh 'npm run build || echo "No build step required"'
+        }
+      }
+    }
+
+    stage('Unit Tests') {
+      steps {
+        dir('app') {
+          sh 'npm test'
+        }
+      }
+    }
+
+    stage('Static Code Analysis') {
+      steps {
+        dir('app') {
+          sh 'npm run lint'
+        }
+      }
+    }
+
+    stage('Build Docker Image') {
+      when {
+        anyOf {
+          branch 'test'
+          branch 'prod'
+        }
+      }
+      steps {
+        script {
+          env.TAG = (env.BRANCH_NAME == 'prod') ?
+            "release-${env.BUILD_NUMBER}" :
+            "test-${env.BUILD_NUMBER}"
+        }
+        sh "docker build -t ${REGISTRY}/${IMAGE}:${TAG} app"
       }
     }
 
@@ -28,11 +71,11 @@ pipeline {
         }
       }
       steps {
-        sh 'trivy fs .'
+        sh "trivy image ${REGISTRY}/${IMAGE}:${TAG}"
       }
     }
 
-    stage('Build & Push Image') {
+    stage('Push Docker Image') {
       when {
         anyOf {
           branch 'test'
@@ -40,35 +83,25 @@ pipeline {
         }
       }
       steps {
-        script {
-          def tag = (env.BRANCH_NAME == 'prod') ?
-            "release-${env.BUILD_NUMBER}" :
-            "test-${env.BUILD_NUMBER}"
-
+        withCredentials([
+          usernamePassword(
+            credentialsId: 'docker-registry-creds',
+            usernameVariable: 'REG_USER',
+            passwordVariable: 'REG_PASS'
+          )
+        ]) {
           sh """
-            docker build -t $REGISTRY/$IMAGE:$tag app
-            docker push $REGISTRY/$IMAGE:$tag
+            echo "$REG_PASS" | docker login $REGISTRY -u "$REG_USER" --password-stdin
+            docker push ${REGISTRY}/${IMAGE}:${TAG}
+            docker logout $REGISTRY
           """
-      withCredentials([
-        usernamePassword(    
-          credentialsId: 'docker-registry-creds',
-          usernameVariable: 'REG_USER',
-          passwordVariable: 'REG_PASS'
-        )
-      ]) {
-        sh """
-          echo "$REG_PASS" | docker login $REGISTRY -u "$REG_USER" --password-stdin
-          docker build -t $REGISTRY/$IMAGE:$tag app
-          docker push $REGISTRY/$IMAGE:$tag
-          docker logout $REGISTRY
-        """
-      } 
-
         }
       }
     }
   }
 }
+
+
 
 
 

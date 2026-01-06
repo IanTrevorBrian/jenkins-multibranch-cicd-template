@@ -87,6 +87,17 @@ Once `docker compose up` is executed:
 - Multibranch pipelines are discovered automatically
 - Pipelines can run immediately
 
+## Pipeline Implementation 
+
+The Jenkins pipeline explicitly builds the application located in the `app/` directory.
+
+- All build, test, and lint steps run within `app/`
+- Static code analysis is enforced using ESLint
+- Security scanning is performed using Trivy on built container images
+- Docker images are only built and pushed for `test` and `prod` branches
+- Jenkins infrastructure itself is not built by the pipeline
+
+
 ## Observability
 
 Basic observability is included to monitor the CI platform itself.
