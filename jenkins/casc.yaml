@@ -11,3 +11,14 @@ jenkins:
   authorizationStrategy:
     loggedInUsersCanDoAnything:
       allowAnonymousRead: false
+      
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: docker-registry-creds
+              username: registryuser
+              password: registrypass
+              description: Docker Registry Credentials
