@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   # --------------------
   # Jenkins
@@ -6,8 +8,8 @@ services:
     image: devops-jenkins:latest
     container_name: devops-jenkins
     ports:
-      - "8080:8080"
-      - "50000:50000"
+      - "8080:8080"    # Jenkins UI
+      - "50000:50000"  # Jenkins agent port
     volumes:
       - jenkins_home:/var/jenkins_home
       - ./jenkins/plugins.txt:/usr/share/jenkins/ref/plugins.txt
@@ -42,6 +44,54 @@ services:
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
 
+  # --------------------
+  # Alertmanager
+  # --------------------
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: devops-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./observability/alertmanager.yml:/etc/alertmanager/config.yml:ro
+
+  # --------------------
+  # SonarQube (Static Code Analysis)
+  # --------------------
+  sonarqube:
+    image: sonarqube:latest
+    container_name: devops-sonarqube
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+
+  # --------------------
+  # Trivy (Security Scanner)
+  # --------------------
+  trivy:
+    image: aquasec/trivy:latest
+    container_name: devops-trivy
+    command: ["--help"]   # Just starts container; scans run in Jenkins
+    # Optional: you can mount a volume if scanning local files/images
+    # volumes:
+    #   - ./app:/app
+
+  # --------------------
+  # Optional: Grafana (Observability dashboard)
+  # --------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: devops-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+
 volumes:
   jenkins_home:
   registry_data:
+  sonarqube_data:
+  sonarqube_extensions:
+  grafana_data:
